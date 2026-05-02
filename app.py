@@ -15,6 +15,16 @@ messages = []
 VALID_STATUSES = ['To Do', 'In Progress', 'Done']
 VALID_PRIORITIES = ['high', 'medium', 'low']
 
+def parse_ai_response(response_text):
+    text = response_text.strip()
+    if text.startswith('```json'):
+        text = text[7:]
+    elif text.startswith('```'):
+        text = text[3:]
+    if text.endswith('```'):
+        text = text[:-3]
+    return json.loads(text.strip())
+
 def get_gemini_client():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -212,7 +222,7 @@ Return ONLY valid JSON.
             contents=prompt,
             config=config
         )
-        result = json.loads(response.text)
+        result = parse_ai_response(response.text)
         
         # Apply updates
         for tid in result.get('completed_task_ids', []):
@@ -279,7 +289,7 @@ Return ONLY a JSON object with this structure:
             contents=prompt,
             config=config
         )
-        result = json.loads(response.text)
+        result = parse_ai_response(response.text)
         
         new_tasks = []
         for nt in result.get('tasks', []):
@@ -334,7 +344,7 @@ Return ONLY a JSON object with this structure:
             contents=prompt,
             config=config
         )
-        result = json.loads(response.text)
+        result = parse_ai_response(response.text)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'error': f'Risk Detector failed: {str(e)}'}), 500

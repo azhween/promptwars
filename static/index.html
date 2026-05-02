@@ -744,7 +744,10 @@
                 if(res.ok) {
                     document.getElementById('sprint-goal-input').value = '';
                     await fetchTasks();
-                } else { alert('AI Error'); }
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'AI Error');
+                }
             } catch(e) { alert(e); }
             hideLoader();
         }
@@ -760,7 +763,10 @@
                     document.getElementById('standup-input').value = '';
                     await fetchTasks();
                     await fetchMessages();
-                } else { alert('AI Error'); }
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'AI Error');
+                }
             } catch(e) { alert(e); }
             hideLoader();
         }
