@@ -36,7 +36,7 @@ def test_create_task_success(client):
     assert response.status_code == 201
     data = response.get_json()
     assert data['title'] == 'Test Task'
-    assert data['id'] in tasks
+    assert any(t['id'] == data['id'] for t in tasks.values())
 
 # 4. test_create_task_missing_title — POST /api/tasks without title returns 400
 def test_create_task_missing_title(client):
@@ -56,18 +56,18 @@ def test_create_task_title_too_long(client):
     assert response.status_code == 400
     assert 'error' in response.get_json()
 
-# 6. test_update_task_success — PATCH /api/tasks/{id} updates status
+# 6. test_update_task_success — PUT /api/tasks/{id} updates status
 def test_update_task_success(client):
     res1 = client.post('/api/tasks', json={'title': 'To Update'})
     task_id = res1.get_json()['id']
     
-    res2 = client.patch(f'/api/tasks/{task_id}', json={'status': 'In Progress'})
+    res2 = client.put(f'/api/tasks/{task_id}', json={'status': 'In Progress'})
     assert res2.status_code == 200
     assert res2.get_json()['status'] == 'In Progress'
 
-# 7. test_update_task_not_found — PATCH /api/tasks/fakeid returns 404
+# 7. test_update_task_not_found — PUT /api/tasks/{uuid} returns 404
 def test_update_task_not_found(client):
-    response = client.patch('/api/tasks/fakeid', json={'status': 'Done'})
+    response = client.put('/api/tasks/123e4567-e89b-12d3-a456-426614174000', json={'status': 'Done'})
     assert response.status_code == 404
 
 # 8. test_delete_task_success — DELETE /api/tasks/{id} returns 200
@@ -79,9 +79,9 @@ def test_delete_task_success(client):
     assert res2.status_code == 200
     assert task_id not in tasks
 
-# 9. test_delete_task_not_found — DELETE /api/tasks/fakeid returns 404
+# 9. test_delete_task_not_found — DELETE /api/tasks/{uuid} returns 404
 def test_delete_task_not_found(client):
-    response = client.delete('/api/tasks/fakeid')
+    response = client.delete('/api/tasks/123e4567-e89b-12d3-a456-426614174000')
     assert response.status_code == 404
 
 # 10. test_get_team — GET /api/team returns members list

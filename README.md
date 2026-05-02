@@ -19,9 +19,10 @@ FlowMate uses Gemini AI as the core engine powering its advanced features. Rathe
 4. **AI Team Summarizer**: Click "Team Summary" to generate a modal report of what was completed, what's in progress, and what to do next.
 
 ## Google Services Used
-- **Gemini 1.5 Flash API**: Powers all four AI features (StandupAI, Sprint Risk Detector, AI Sprint Planner, AI Team Summarizer) using fast, structured JSON generation.
+- **Gemini 2.0 Flash API**: Powers all four AI features (StandupAI, Sprint Risk Detector, AI Sprint Planner, AI Team Summarizer) using fast, structured JSON generation.
 - **Google Cloud Run**: The application is fully containerized and configured for serverless deployment on Google Cloud Run.
 - **Google Cloud Build**: Used to build and push the Docker image to the Google Container Registry.
+- **Google Cloud Logging**: Logs all AI requests and API execution times seamlessly into GCP for full operational visibility.
 
 ## Assumptions Made
 - **Storage**: Tasks and messages are stored in memory using Python dictionaries for fast O(1) lookups during the competition. Data resets on restart.

@@ -7,15 +7,48 @@ from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import flask_talisman
+from flask_talisman import Talisman
+from flask_cors import CORS
 from google import genai
 from google.genai import types
 from typing import Tuple, Dict, Any, List
 
-# Setup simple logging
+# Setup logging with Google Cloud fallback
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+try:
+    from google.cloud import logging as gcloud_logging
+    gcloud_logger_client = gcloud_logging.Client()
+    gcloud_logger_client.setup_logging()
+    logger.info("Google Cloud Logging successfully configured.")
+except ImportError:
+    logger.warning("google-cloud-logging library not installed. Using standard logging.")
+except Exception as e:
+    logger.warning(f"Google Cloud Logging not configured. Using standard logging. Reason: {e}")
+
 app = Flask(__name__, static_folder='static', static_url_path='')
+
+# Security Configurations
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024 # 1MB limit
+
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:8080", "https://*.run.app"]}})
+
+csp = {
+    'default-src': [
+        '\'self\'',
+        '\'unsafe-inline\'',
+        'https://fonts.googleapis.com',
+        'https://fonts.gstatic.com'
+    ]
+}
+Talisman(
+    app, 
+    content_security_policy=csp, 
+    force_https=False, 
+    frame_options=flask_talisman.DENY
+)
 
 # Configuration & Constants
 MAX_TITLE_LENGTH = 200
@@ -30,7 +63,7 @@ VALID_PRIORITIES = ['high', 'medium', 'low']
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["1000 per day"],
+    default_limits=["100 per minute"],
     storage_uri="memory://"
 )
 
@@ -49,35 +82,45 @@ if not os.environ.get("GEMINI_API_KEY"):
     logger.warning("WARNING: GEMINI_API_KEY environment variable is missing. AI features will fail.")
 
 
+@app.after_request
+def apply_security_and_log(response):
+    """Enforces strict security headers and logs every API call."""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    if request.path.startswith('/api/'):
+        logger.info(f"API Request: {request.method} {request.path} - Status: {response.status_code}")
+    return response
+
+
+def is_valid_uuid(val: str) -> bool:
+    """
+    Validates if a string is a valid UUIDv4.
+    """
+    try:
+        uuid.UUID(str(val), version=4)
+        return True
+    except ValueError:
+        return False
+
+
 def strip_html(text: str) -> str:
     """
     Strips basic HTML tags from user input.
-
-    Args:
-        text (str): The raw input string.
-
-    Returns:
-        str: The sanitized string.
     """
     if not isinstance(text, str):
         return ""
     import re
-    clean = re.compile('<.*?>')
-    return re.sub(clean, '', text).strip()
+    # Removes any HTML tag recursively
+    clean = re.compile('<[^<]+?>')
+    cleaned = re.sub(clean, '', text).strip()
+    return cleaned
 
 
 def parse_ai_response(response_text: str) -> Dict[str, Any]:
     """
-    Safely parses JSON from Gemini API responses, stripping markdown blocks if present.
-
-    Args:
-        response_text (str): The raw text response from the API.
-
-    Returns:
-        Dict[str, Any]: The parsed JSON dictionary.
-        
-    Raises:
-        json.JSONDecodeError: If the response cannot be parsed into JSON.
+    Safely parses JSON from Gemini API responses.
     """
     text = response_text.strip()
     if text.startswith('```json'):
@@ -92,9 +135,6 @@ def parse_ai_response(response_text: str) -> Dict[str, Any]:
 def get_gemini_client() -> Any:
     """
     Retrieves the configured Gemini client.
-
-    Returns:
-        genai.Client or None: Returns the authenticated client if the key is present, None otherwise.
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -111,45 +151,18 @@ def get_gemini_client() -> Any:
 
 @app.route('/health', methods=['GET'])
 def health_check() -> Tuple[Any, int]:
-    """
-    Health check endpoint.
-
-    Returns:
-        tuple: JSON status and 200 HTTP code.
-    """
     return jsonify({"status": "ok"}), 200
-
 
 @app.route('/')
 def index() -> Any:
-    """
-    Serves the main frontend application.
-
-    Returns:
-        Response: The static index.html file.
-    """
     return send_from_directory('static', 'index.html')
-
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks() -> Tuple[Any, int]:
-    """
-    Retrieves all current tasks.
-
-    Returns:
-        tuple: A JSON list of tasks and 200 HTTP code.
-    """
     return jsonify(list(tasks.values())), 200
-
 
 @app.route('/api/tasks', methods=['POST'])
 def create_task() -> Tuple[Any, int]:
-    """
-    Creates a new task with validation and sanitization.
-
-    Returns:
-        tuple: The created task JSON and 201 HTTP code, or an error JSON and 400.
-    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'Invalid JSON payload'}), 400
@@ -190,24 +203,15 @@ def create_task() -> Tuple[Any, int]:
         'created_at': datetime.utcnow().isoformat()
     }
     tasks[task_id] = new_task
-    
-    # Invalidate cache
     sprint_risk_cache['timestamp'] = 0
-    
     return jsonify(new_task), 201
 
 
 @app.route('/api/tasks/<task_id>', methods=['PATCH', 'PUT'])
 def update_task(task_id: str) -> Tuple[Any, int]:
-    """
-    Updates an existing task with partial data.
+    if not is_valid_uuid(task_id):
+        return jsonify({'error': 'Invalid Task ID format'}), 400
 
-    Args:
-        task_id (str): The unique identifier of the task.
-
-    Returns:
-        tuple: The updated task JSON and 200 HTTP code, or an error and 400/404.
-    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'Invalid JSON payload'}), 400
@@ -216,6 +220,7 @@ def update_task(task_id: str) -> Tuple[Any, int]:
         return jsonify({'error': 'Task not found'}), 404
 
     task = tasks[task_id]
+    old_status = task['status']
     
     if 'title' in data:
         title = strip_html(data['title'])
@@ -252,73 +257,66 @@ def update_task(task_id: str) -> Tuple[Any, int]:
     if 'is_blocked' in data:
         task['is_blocked'] = bool(data['is_blocked'])
 
-    # Invalidate cache
     sprint_risk_cache['timestamp'] = 0
+
+    # Auto Congratulation if moved to Done
+    if task['status'] == 'Done' and old_status != 'Done':
+        client = get_gemini_client()
+        if client:
+            try:
+                prompt = f"""
+Task "{task['title']}" was just marked as Done!
+Current pending tasks:
+{json.dumps([t for t in tasks.values() if t['status'] != 'Done'], indent=2)}
+
+Write a short, engaging congratulatory message to the team and suggest exactly 1 pending task they should focus on next based on priority.
+"""
+                start_time = time.time()
+                response = client.models.generate_content(
+                    model='gemini-2.0-flash',
+                    contents=prompt
+                )
+                logger.info(f"Gemini API /api/tasks (Auto-Done Hook) took {time.time() - start_time:.2f}s")
+                messages.append({
+                    'id': str(uuid.uuid4()),
+                    'author': '🤖 FlowMate AI',
+                    'text': response.text[:MAX_MESSAGE_LENGTH],
+                    'created_at': datetime.utcnow().isoformat()
+                })
+            except Exception as e:
+                logger.error(f"Failed to generate auto-done message: {str(e)}")
 
     return jsonify(task), 200
 
 
 @app.route('/api/tasks/<task_id>', methods=['DELETE'])
 def delete_task(task_id: str) -> Tuple[Any, int]:
-    """
-    Deletes a task by its ID.
+    if not is_valid_uuid(task_id):
+        return jsonify({'error': 'Invalid Task ID format'}), 400
 
-    Args:
-        task_id (str): The unique identifier of the task.
-
-    Returns:
-        tuple: Empty response and 200 HTTP code, or error and 404.
-    """
     if task_id not in tasks:
         return jsonify({'error': 'Task not found'}), 404
         
     del tasks[task_id]
-    
-    # Invalidate cache
     sprint_risk_cache['timestamp'] = 0
-    
     return jsonify({"success": True}), 200
 
 
 # ==========================================
-# Team Routes
+# Team & Messages Routes
 # ==========================================
 
 @app.route('/api/team', methods=['GET'])
 def get_team() -> Tuple[Any, int]:
-    """
-    Retrieves a list of unique team members (assignees) from active tasks.
-
-    Returns:
-        tuple: A JSON list of unique assignees and 200 HTTP code.
-    """
     assignees = {t['assignee'] for t in tasks.values() if t.get('assignee')}
     return jsonify(list(assignees)), 200
 
-
-# ==========================================
-# Message Routes
-# ==========================================
-
 @app.route('/api/messages', methods=['GET'])
 def get_messages() -> Tuple[Any, int]:
-    """
-    Retrieves all chat messages.
-
-    Returns:
-        tuple: JSON list of messages and 200 HTTP code.
-    """
     return jsonify(messages), 200
-
 
 @app.route('/api/messages', methods=['POST'])
 def create_message() -> Tuple[Any, int]:
-    """
-    Creates a new chat message.
-
-    Returns:
-        tuple: The new message JSON and 201 HTTP code, or an error and 400.
-    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'Invalid JSON payload'}), 400
@@ -351,12 +349,6 @@ def create_message() -> Tuple[Any, int]:
 @app.route('/api/summarize', methods=['POST'])
 @limiter.limit("10 per minute")
 def summarize_tasks() -> Tuple[Any, int]:
-    """
-    Calls Gemini API to summarize all current tasks. Rate limited to 10/min.
-
-    Returns:
-        tuple: JSON with summary and 200 HTTP code, or error and 500/503.
-    """
     client = get_gemini_client()
     if not client:
         return jsonify({'error': 'AI Summarizer is not configured'}), 503
@@ -371,7 +363,7 @@ def summarize_tasks() -> Tuple[Any, int]:
     try:
         start_time = time.time()
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         logger.info(f"Gemini API /api/summarize took {time.time() - start_time:.2f}s")
@@ -384,12 +376,6 @@ def summarize_tasks() -> Tuple[Any, int]:
 @app.route('/api/ai/standup', methods=['POST'])
 @limiter.limit("10 per minute")
 def ai_standup() -> Tuple[Any, int]:
-    """
-    Analyzes natural language standup updates using Gemini API. Rate limited to 10/min.
-
-    Returns:
-        tuple: JSON with updates and 200 HTTP code, or error and 400/500/503.
-    """
     data = request.get_json()
     if not data or not data.get('author') or not data.get('text'):
         return jsonify({'error': 'Author and text are required'}), 400
@@ -413,36 +399,32 @@ Current tasks:
 
 Analyze the standup text and the current tasks. Return a JSON object with the following structure:
 {{
-    "completed_task_ids": ["id1", "id2"], // Task IDs that the user indicates they have finished
-    "blocked_task_ids": ["id3"], // Task IDs that the user indicates are blocking them
-    "new_tasks": [ // Any new tasks the user implies they will do
+    "completed_task_ids": ["id1", "id2"],
+    "blocked_task_ids": ["id3"],
+    "new_tasks": [
         {{"title": "...", "description": "...", "priority": "medium", "assignee": "{author}", "status": "To Do", "is_blocked": false}}
     ],
     "summary_message": "A concise, formatted summary of what was done, what's new, and what's blocked, written from the perspective of the user to the team."
 }}
 Return ONLY valid JSON.
 """
-
     try:
         config = types.GenerateContentConfig(response_mime_type="application/json")
         start_time = time.time()
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=config
         )
         logger.info(f"Gemini API /api/ai/standup took {time.time() - start_time:.2f}s")
         result = parse_ai_response(response.text)
         
-        # Apply updates using dict lookups O(1)
         for tid in result.get('completed_task_ids', []):
             if tid in tasks:
                 tasks[tid]['status'] = 'Done'
-            
         for tid in result.get('blocked_task_ids', []):
             if tid in tasks:
                 tasks[tid]['is_blocked'] = True
-            
         for nt in result.get('new_tasks', []):
             new_id = str(uuid.uuid4())
             tasks[new_id] = {
@@ -457,9 +439,7 @@ Return ONLY valid JSON.
                 'created_at': datetime.utcnow().isoformat()
             }
 
-        sprint_risk_cache['timestamp'] = 0 # Invalidate cache
-
-        # Post summary message
+        sprint_risk_cache['timestamp'] = 0
         msg_text = result.get('summary_message', text)
         new_msg = {
             'id': str(uuid.uuid4()),
@@ -478,12 +458,6 @@ Return ONLY valid JSON.
 @app.route('/api/ai/plan_sprint', methods=['POST'])
 @limiter.limit("10 per minute")
 def ai_plan_sprint() -> Tuple[Any, int]:
-    """
-    Generates new sprint tasks using Gemini API based on a goal. Rate limited to 10/min.
-
-    Returns:
-        tuple: JSON with new tasks and 201 HTTP code, or error and 400/500/503.
-    """
     data = request.get_json()
     if not data or not data.get('goal'):
         return jsonify({'error': 'Goal is required'}), 400
@@ -510,7 +484,7 @@ Return ONLY a JSON object with this structure:
         config = types.GenerateContentConfig(response_mime_type="application/json")
         start_time = time.time()
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=config
         )
@@ -534,7 +508,7 @@ Return ONLY a JSON object with this structure:
             tasks[new_id] = t
             new_tasks.append(t)
             
-        sprint_risk_cache['timestamp'] = 0 # Invalidate cache
+        sprint_risk_cache['timestamp'] = 0
         return jsonify({'tasks': new_tasks}), 201
     except Exception as e:
         logger.error(f"Gemini API Error: {str(e)}")
@@ -544,16 +518,9 @@ Return ONLY a JSON object with this structure:
 @app.route('/api/ai/risk', methods=['GET'])
 @limiter.limit("10 per minute")
 def ai_risk_detector() -> Tuple[Any, int]:
-    """
-    Evaluates sprint risks using Gemini API. Caches response for 60 seconds. Rate limited to 10/min.
-
-    Returns:
-        tuple: JSON with risk analysis and 200 HTTP code, or error and 500/503.
-    """
     if not tasks:
         return jsonify({'at_risk': False}), 200
 
-    # Return cached response if valid (under 60 seconds old)
     current_time = time.time()
     if sprint_risk_cache['data'] and (current_time - sprint_risk_cache['timestamp'] < 60):
         return jsonify(sprint_risk_cache['data']), 200
@@ -575,7 +542,7 @@ Tasks:
 Return ONLY a JSON object with this structure:
 {{
     "at_risk": true/false, // Boolean indicating if sprint is at risk
-    "banner_message": "⚠️ Sprint at risk: 3 overdue tasks, 2 unassigned high priority items", // A short warning message (max 1 sentence)
+    "banner_message": "⚠️ Sprint at risk: 3 overdue tasks, 2 unassigned high priority items",
     "recommendation": "Detailed recommendation on how to fix the risks..."
 }}
 """
@@ -583,14 +550,13 @@ Return ONLY a JSON object with this structure:
         config = types.GenerateContentConfig(response_mime_type="application/json")
         start_time = time.time()
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=config
         )
         logger.info(f"Gemini API /api/ai/risk took {time.time() - start_time:.2f}s")
         result = parse_ai_response(response.text)
         
-        # Update cache
         sprint_risk_cache['data'] = result
         sprint_risk_cache['timestamp'] = current_time
         
@@ -599,20 +565,125 @@ Return ONLY a JSON object with this structure:
         logger.error(f"Gemini API Error: {str(e)}")
         return jsonify({'error': 'Risk Detector failed due to AI service error.'}), 500
 
+@app.route('/api/ai/assistant', methods=['POST'])
+@limiter.limit("20 per minute")
+def ai_assistant() -> Tuple[Any, int]:
+    """Answers arbitrary questions based on task context."""
+    data = request.get_json()
+    if not data or not data.get('question'):
+        return jsonify({'error': 'Question is required'}), 400
+    
+    question = strip_html(data['question'])
+    client = get_gemini_client()
+    if not client:
+        return jsonify({'error': 'AI features not configured'}), 503
+        
+    prompt = f"""
+You are the FlowMate AI Assistant. You answer team queries based on the current active tasks.
+Current Date: {datetime.utcnow().date().isoformat()}
+Active Tasks:
+{json.dumps(list(tasks.values()), indent=2)}
+
+User Question: "{question}"
+
+Answer intelligently, concisely, and helpfully using the task context provided.
+"""
+    try:
+        start_time = time.time()
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt
+        )
+        logger.info(f"Gemini API /api/ai/assistant took {time.time() - start_time:.2f}s")
+        return jsonify({'answer': response.text}), 200
+    except Exception as e:
+        logger.error(f"Gemini API Error: {str(e)}")
+        return jsonify({'error': 'Assistant failed due to AI service error.'}), 500
+
+
+@app.route('/api/ai/daily_briefing', methods=['GET'])
+@limiter.limit("5 per minute")
+def ai_daily_briefing() -> Tuple[Any, int]:
+    """Generates a personalized daily briefing for the team."""
+    client = get_gemini_client()
+    if not client:
+        return jsonify({'error': 'AI features not configured'}), 503
+
+    prompt = f"""
+Current Date: {datetime.utcnow().date().isoformat()}
+Active Tasks:
+{json.dumps(list(tasks.values()), indent=2)}
+
+Generate a "Daily Briefing".
+Format exactly like this (with actual numbers/names based on context):
+"Good morning! You have X high priority tasks, Y are overdue, Z is overloaded. Suggested focus: [task name]"
+If no tasks, say: "Good morning! You have no active tasks. Consider planning a sprint."
+"""
+    try:
+        start_time = time.time()
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt
+        )
+        logger.info(f"Gemini API /api/ai/daily_briefing took {time.time() - start_time:.2f}s")
+        return jsonify({'briefing': response.text}), 200
+    except Exception as e:
+        logger.error(f"Gemini API Error: {str(e)}")
+        return jsonify({'error': 'Daily Briefing failed due to AI service error.'}), 500
+
+
+@app.route('/api/ai/suggest_task', methods=['POST'])
+@limiter.limit("30 per minute")
+def ai_suggest_task() -> Tuple[Any, int]:
+    """Auto-suggests priority and assignee based on title."""
+    data = request.get_json()
+    if not data or not data.get('title'):
+        return jsonify({'error': 'Title is required'}), 400
+        
+    title = strip_html(data['title'])
+    client = get_gemini_client()
+    if not client:
+        return jsonify({'error': 'AI features not configured'}), 503
+        
+    prompt = f"""
+A user is typing the title for a new task: "{title}"
+Current Active Tasks context:
+{json.dumps([{{'title': t['title'], 'assignee': t['assignee'], 'priority': t['priority']}} for t in tasks.values()], indent=2)}
+
+Predict the most likely priority (high, medium, low) and the best assignee for this new task.
+Return ONLY a JSON object:
+{{
+    "priority": "medium",
+    "assignee": "Name"
+}}
+"""
+    try:
+        config = types.GenerateContentConfig(response_mime_type="application/json")
+        start_time = time.time()
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=config
+        )
+        logger.info(f"Gemini API /api/ai/suggest_task took {time.time() - start_time:.2f}s")
+        return jsonify(parse_ai_response(response.text)), 200
+    except Exception as e:
+        logger.error(f"Gemini API Error: {str(e)}")
+        return jsonify({'error': 'Suggest Task failed due to AI service error.'}), 500
+
 
 @app.errorhandler(429)
 def ratelimit_handler(e: Any) -> Tuple[Any, int]:
-    """
-    Custom handler for rate limiting errors.
+    return jsonify({"error": "Rate limit exceeded."}), 429
 
-    Args:
-        e: The exception context.
+@app.errorhandler(413)
+def request_entity_too_large(e: Any) -> Tuple[Any, int]:
+    return jsonify({"error": "Payload too large. Maximum size is 1MB."}), 413
 
-    Returns:
-        tuple: JSON error message and 429 HTTP code.
-    """
-    return jsonify({"error": "Rate limit exceeded. Maximum 10 requests per minute."}), 429
-
+@app.errorhandler(500)
+def internal_error(e: Any) -> Tuple[Any, int]:
+    logger.error(f"500 Internal Server Error: {str(e)}")
+    return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
