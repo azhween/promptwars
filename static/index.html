@@ -3,33 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Collab Pro</title>
+    <title>FlowMate - AI Collaboration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #121212;
-            --bg-panel: #1e1e24;
-            --bg-card: #2a2a35;
-            --text-main: #f0f0f0;
-            --text-muted: #a0a0a0;
-            --accent-primary: #6c63ff;
-            --accent-hover: #5a52d5;
-            --danger: #ff6b6b;
-            --success: #20c997;
-            --warning: #fcc419;
-            --border-radius: 8px;
-            --shadow: 0 4px 6px rgba(0,0,0,0.3);
-            --transition: all 0.3s ease;
+            --bg-deep-navy: #0A0F1E;
+            --bg-panel: rgba(20, 25, 45, 0.6);
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --accent-blue: #3B82F6;
+            --accent-hover: #2563EB;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --danger: #EF4444;
+            --warning: #EAB308;
+            --success: #10B981;
+            --border-radius: 12px;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.3);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep-navy);
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 400px);
             color: var(--text-main);
             display: flex;
             flex-direction: column;
@@ -37,42 +36,98 @@
             overflow: hidden;
         }
 
-        /* Header / Dashboard */
+        h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
+
+        /* Loading Spinner */
+        #global-loader {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 15, 30, 0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(59, 130, 246, 0.3);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Risk Banner */
+        #risk-banner {
+            display: none;
+            background-color: rgba(234, 179, 8, 0.2);
+            color: var(--warning);
+            text-align: center;
+            padding: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(234, 179, 8, 0.4);
+            animation: pulse-yellow 2s infinite;
+        }
+        @keyframes pulse-yellow {
+            0% { box-shadow: inset 0 0 0 rgba(234, 179, 8, 0); }
+            50% { box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.2); }
+            100% { box-shadow: inset 0 0 0 rgba(234, 179, 8, 0); }
+        }
+
+        /* Header */
         header {
-            background-color: var(--bg-panel);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: var(--shadow);
+            border-bottom: var(--glass-border);
+            background: rgba(10, 15, 30, 0.8);
+            backdrop-filter: blur(10px);
             z-index: 10;
         }
 
-        .header-title h1 {
-            font-size: 1.5rem;
-            color: var(--accent-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .stats-bar {
+        .logo {
             display: flex;
-            gap: 1.5rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .stat-item span {
-            font-weight: bold;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.8rem;
+            font-weight: 800;
             color: var(--text-main);
+            text-shadow: 0 0 10px rgba(59,130,246,0.5);
         }
 
         .header-actions {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .ai-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input[type="text"], textarea, select, input[type="date"] {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-main);
+            padding: 0.6rem 1rem;
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            transition: var(--transition);
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 8px rgba(59,130,246,0.3);
         }
 
         button {
-            background-color: var(--accent-primary);
+            background-color: var(--accent-blue);
             color: white;
             border: none;
             padding: 0.6rem 1.2rem;
@@ -80,473 +135,463 @@
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Inter', sans-serif;
         }
-
         button:hover {
             background-color: var(--accent-hover);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-1px);
         }
-
-        button.danger {
-            background-color: var(--danger);
+        button.secondary {
+            background-color: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
         }
+        button.secondary:hover { background-color: rgba(255,255,255,0.1); box-shadow: none; }
 
-        button.danger:hover {
-            background-color: #e55a5a;
-        }
-
-        /* Main Layout */
+        /* Main App Container */
         .app-container {
             display: flex;
             flex: 1;
             overflow: hidden;
+            padding: 1.5rem;
+            gap: 1.5rem;
         }
 
         /* Kanban Board */
         .kanban-board {
             flex: 1;
             display: flex;
-            padding: 2rem;
             gap: 1.5rem;
             overflow-x: auto;
+            padding-bottom: 1rem;
         }
 
         .kanban-column {
-            background-color: var(--bg-panel);
-            border-radius: var(--border-radius);
-            min-width: 300px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            border-radius: 16px;
+            min-width: 320px;
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 1rem;
-            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        .kanban-column h2 {
-            font-size: 1.1rem;
+        .kanban-column h3 {
+            font-size: 1.2rem;
             margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--accent-primary);
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            color: var(--text-main);
+        }
+
+        .col-count {
+            background: rgba(255,255,255,0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
         }
 
         .task-list {
             flex: 1;
             overflow-y: auto;
             min-height: 100px;
-            padding-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        .task-card {
-            background-color: var(--bg-card);
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem 1rem;
+            font-size: 0.9rem;
+            border: 2px dashed rgba(255,255,255,0.1);
             border-radius: var(--border-radius);
-            padding: 1rem;
-            margin-bottom: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* Cards */
+        .task-card {
+            background: var(--bg-card);
+            border: var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 1.2rem;
             cursor: grab;
             transition: var(--transition);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             position: relative;
-        }
-
-        .task-card:active {
-            cursor: grabbing;
+            border-left: 4px solid var(--accent-blue); /* Default */
         }
 
         .task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
+            transform: translateY(-4px);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
 
         .task-card.dragging {
-            opacity: 0.5;
+            opacity: 0.4;
+            transform: scale(0.95);
         }
 
-        .task-header {
+        .task-card[data-priority="high"] { border-left-color: var(--danger); }
+        .task-card[data-priority="medium"] { border-left-color: var(--warning); }
+        .task-card[data-priority="low"] { border-left-color: var(--success); }
+
+        .task-card.overdue {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            border-left-color: var(--danger);
+        }
+
+        .card-header {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 0.5rem;
         }
 
-        .task-title {
-            font-weight: bold;
-            font-size: 1rem;
+        .card-title {
+            font-weight: 600;
+            font-size: 1.05rem;
+            word-break: break-word;
         }
 
-        .task-desc {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        .task-meta {
+        .card-badges {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.8rem;
         }
 
         .badge {
+            font-size: 0.7rem;
+            font-weight: 700;
             padding: 0.2rem 0.5rem;
-            border-radius: 12px;
-            font-weight: 600;
-            text-transform: capitalize;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .badge.blocked { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .badge.high { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .badge.medium { background: rgba(234, 179, 8, 0.1); color: var(--warning); }
+        .badge.low { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+
+        .card-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        .priority-high { background-color: rgba(255, 107, 107, 0.2); color: var(--danger); }
-        .priority-medium { background-color: rgba(252, 196, 25, 0.2); color: var(--warning); }
-        .priority-low { background-color: rgba(32, 201, 151, 0.2); color: var(--success); }
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
 
-        .task-actions {
+        .avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), #8B5CF6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .card-actions {
             position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
+            top: 1rem; right: 1rem;
             display: none;
             gap: 0.5rem;
         }
-
-        .task-card:hover .task-actions {
-            display: flex;
-        }
-
+        .task-card:hover .card-actions { display: flex; }
         .icon-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
+            background: rgba(0,0,0,0.5);
+            border: none; color: white;
+            border-radius: 4px; padding: 0.3rem;
             cursor: pointer;
-            padding: 0.2rem;
-            transition: var(--transition);
         }
-
-        .icon-btn:hover {
-            color: var(--text-main);
-        }
+        .icon-btn:hover { background: var(--accent-blue); }
 
         /* Chat Panel */
         .chat-panel {
-            width: 350px;
-            background-color: var(--bg-panel);
-            border-left: 1px solid #333;
+            width: 320px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
-            box-shadow: -4px 0 6px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
         .chat-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #333;
+            padding: 1.2rem;
+            border-bottom: var(--glass-border);
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
         }
-
         .chat-messages {
-            flex: 1;
-            padding: 1rem;
+            flex: 1; padding: 1rem;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            display: flex; flex-direction: column; gap: 1rem;
         }
-
         .message {
-            background-color: var(--bg-card);
+            background: rgba(255,255,255,0.05);
             padding: 0.8rem;
             border-radius: var(--border-radius);
             font-size: 0.9rem;
+            border-left: 2px solid var(--accent-blue);
         }
-
-        .message-author {
-            font-weight: bold;
-            color: var(--accent-primary);
-            margin-bottom: 0.3rem;
-            font-size: 0.8rem;
-        }
-
+        .message.ai-msg { border-left-color: #8B5CF6; background: rgba(139, 92, 246, 0.05); }
+        .message-author { font-weight: 700; margin-bottom: 0.3rem; font-size: 0.8rem; color: var(--text-muted); }
         .chat-input {
             padding: 1rem;
-            border-top: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            border-top: var(--glass-border);
+            display: flex; flex-direction: column; gap: 0.5rem;
         }
 
-        input[type="text"], textarea, select {
-            width: 100%;
-            padding: 0.6rem;
-            background-color: var(--bg-card);
-            border: 1px solid #444;
-            border-radius: var(--border-radius);
-            color: var(--text-main);
-            font-family: inherit;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-        }
-
-        /* Modal */
+        /* Modals */
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
+            backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center;
             z-index: 100;
-            backdrop-filter: blur(2px);
         }
-
         .modal {
-            background-color: var(--bg-panel);
+            background: #111827;
+            border: var(--glass-border);
             padding: 2rem;
-            border-radius: var(--border-radius);
-            width: 400px;
-            box-shadow: var(--shadow);
+            border-radius: 16px;
+            width: 450px;
+            max-width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: modalSlideIn 0.3s ease;
         }
-
-        .modal h2 {
-            margin-bottom: 1.5rem;
-            color: var(--accent-primary);
+        @keyframes modalSlideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; color: var(--text-muted); }
+        .form-group input[type="checkbox"] { width: auto; margin-right: 0.5rem; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
 
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.4rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .modal-actions button.cancel {
-            background-color: transparent;
-            border: 1px solid #555;
-        }
-
-        .modal-actions button.cancel:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-
-        /* AI Summary Modal */
-        #summaryText {
-            white-space: pre-wrap;
-            line-height: 1.5;
-            font-size: 0.9rem;
-            color: var(--text-main);
-            max-height: 400px;
-            overflow-y: auto;
-            background: var(--bg-card);
-            padding: 1rem;
-            border-radius: 4px;
+        #summary-text, #risk-text {
+            white-space: pre-wrap; line-height: 1.6; font-size: 0.95rem;
+            max-height: 60vh; overflow-y: auto; padding-right: 0.5rem;
         }
 
         /* Responsive */
         @media (max-width: 1024px) {
-            .app-container {
-                flex-direction: column;
-            }
-            .chat-panel {
-                width: 100%;
-                height: 300px;
-                border-left: none;
-                border-top: 1px solid #333;
-            }
+            .app-container { flex-direction: column; overflow-y: auto; }
+            .kanban-board { flex: none; height: auto; flex-direction: column; }
+            .chat-panel { width: 100%; height: 400px; }
+            header { flex-direction: column; gap: 1rem; align-items: stretch; }
+            .header-actions { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
 <body>
 
+    <!-- Loading Spinner -->
+    <div id="global-loader" aria-live="assertive">
+        <div class="spinner"></div>
+        <div id="loader-text" style="font-weight: 600;">Processing with AI...</div>
+    </div>
+
+    <!-- Risk Banner -->
+    <div id="risk-banner" role="alert" tabindex="0" aria-label="Sprint Risk Warning" onclick="showRiskDetails()">
+        <!-- Banner text injected here -->
+    </div>
+
     <header>
-        <div class="header-title">
-            <h1>Team Collab Pro</h1>
-            <div class="stats-bar" aria-label="Dashboard Statistics">
-                <div class="stat-item">Total: <span id="stat-total">0</span></div>
-                <div class="stat-item">In Progress: <span id="stat-inprogress">0</span></div>
-                <div class="stat-item">Completed: <span id="stat-completed">0%</span></div>
-            </div>
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            FlowMate
         </div>
+        
         <div class="header-actions">
-            <button id="btn-summarize" aria-label="AI Summarizer">✨ AI Summarizer</button>
-            <button id="btn-new-task" aria-label="New Task">+ New Task</button>
+            <div class="ai-input-group">
+                <input type="text" id="sprint-goal-input" placeholder="Enter sprint goal..." aria-label="Sprint Goal" style="width: 250px;">
+                <button onclick="planSprint()" aria-label="AI Sprint Planner">⚡ Plan Sprint</button>
+            </div>
+            <div class="ai-input-group">
+                <input type="text" id="standup-author" placeholder="Your Name" style="width: 120px;" aria-label="Standup Author" value="TeamMember">
+                <input type="text" id="standup-input" placeholder="Type natural language standup..." aria-label="Standup Update" style="width: 300px;">
+                <button onclick="submitStandup()" aria-label="Submit StandupAI">🎤 StandupAI</button>
+            </div>
+            <button onclick="generateTeamSummary()" class="secondary" aria-label="Generate Team Summary">✨ Team Summary</button>
+            <button onclick="openTaskModal()" aria-label="New Task">+ Task</button>
         </div>
     </header>
 
     <div class="app-container">
         <main class="kanban-board">
             <section class="kanban-column" data-status="To Do">
-                <h2>To Do <span id="count-todo" class="badge priority-medium">0</span></h2>
+                <h3>To Do <span class="col-count" id="count-todo">0</span></h3>
                 <div class="task-list" id="list-todo"></div>
             </section>
             
             <section class="kanban-column" data-status="In Progress">
-                <h2>In Progress <span id="count-inprogress" class="badge priority-high">0</span></h2>
+                <h3>In Progress <span class="col-count" id="count-inprogress">0</span></h3>
                 <div class="task-list" id="list-inprogress"></div>
             </section>
             
             <section class="kanban-column" data-status="Done">
-                <h2>Done <span id="count-done" class="badge priority-low">0</span></h2>
+                <h3>Done <span class="col-count" id="count-done">0</span></h3>
                 <div class="task-list" id="list-done"></div>
             </section>
         </main>
 
         <aside class="chat-panel" aria-label="Team Chat">
-            <div class="chat-header">
-                <h2>Team Chat</h2>
-            </div>
-            <div class="chat-messages" id="chat-messages" aria-live="polite">
-                <!-- Messages will load here -->
-            </div>
+            <div class="chat-header">Team Chat</div>
+            <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
             <div class="chat-input">
-                <input type="text" id="chat-author" placeholder="Your Name" aria-label="Your Name" required>
-                <textarea id="chat-text" placeholder="Type a message..." aria-label="Message Text" rows="2" required></textarea>
-                <button id="btn-send-msg" aria-label="Send Message">Send</button>
+                <input type="text" id="chat-author" placeholder="Your Name" aria-label="Chat Name">
+                <textarea id="chat-text" placeholder="Type a message..." rows="2" aria-label="Message Text"></textarea>
+                <button onclick="sendMessage()" aria-label="Send Message">Send</button>
             </div>
         </aside>
     </div>
 
+    <!-- Modals -->
     <!-- Task Modal -->
     <div class="modal-overlay" id="task-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal">
-            <h2 id="modal-title">Create Task</h2>
+            <h3 id="modal-title" style="margin-bottom: 1.5rem;">Create Task</h3>
             <form id="task-form">
                 <input type="hidden" id="task-id">
                 <div class="form-group">
-                    <label for="task-title">Title</label>
-                    <input type="text" id="task-title" required aria-required="true">
+                    <label>Title</label>
+                    <input type="text" id="task-title" required style="width:100%;">
                 </div>
                 <div class="form-group">
-                    <label for="task-desc">Description</label>
-                    <textarea id="task-desc" rows="3"></textarea>
+                    <label>Description</label>
+                    <textarea id="task-desc" rows="3" style="width:100%;"></textarea>
+                </div>
+                <div style="display:flex; gap:1rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label>Priority</label>
+                        <select id="task-priority" required style="width:100%;">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Due Date</label>
+                        <input type="date" id="task-due" style="width:100%;">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="task-priority">Priority</label>
-                    <select id="task-priority" required>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="task-assignee">Assignee</label>
-                    <input type="text" id="task-assignee">
+                    <label>Assignee</label>
+                    <input type="text" id="task-assignee" style="width:100%;">
                 </div>
                 <div class="form-group" id="status-group" style="display:none;">
-                    <label for="task-status">Status</label>
-                    <select id="task-status">
+                    <label>Status</label>
+                    <select id="task-status" style="width:100%;">
                         <option value="To Do">To Do</option>
                         <option value="In Progress">In Progress</option>
                         <option value="Done">Done</option>
                     </select>
                 </div>
+                <div class="form-group" style="display:flex; align-items:center;">
+                    <input type="checkbox" id="task-blocked">
+                    <label for="task-blocked" style="margin:0; color:var(--danger); font-weight:600;">Mark as Blocked</label>
+                </div>
                 <div class="modal-actions">
-                    <button type="button" class="cancel" id="btn-cancel-task">Cancel</button>
-                    <button type="submit">Save Task</button>
+                    <button type="button" class="secondary" onclick="closeModal('task-modal')">Cancel</button>
+                    <button type="submit">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- AI Summary Modal -->
-    <div class="modal-overlay" id="summary-modal" role="dialog" aria-modal="true" aria-labelledby="summary-title">
+    <!-- Generic Text Modal (Summary/Risk) -->
+    <div class="modal-overlay" id="text-modal" role="dialog" aria-modal="true" aria-labelledby="text-modal-title">
         <div class="modal" style="width: 600px;">
-            <h2 id="summary-title">AI Task Summary & Priority Suggestion</h2>
-            <div id="summaryText">Loading...</div>
+            <h3 id="text-modal-title" style="margin-bottom: 1.5rem; color:var(--accent-blue);">Modal Title</h3>
+            <div id="text-modal-content" style="white-space:pre-wrap; line-height:1.6; max-height:60vh; overflow-y:auto;"></div>
             <div class="modal-actions">
-                <button type="button" class="cancel" id="btn-close-summary">Close</button>
+                <button type="button" class="secondary" onclick="closeModal('text-modal')">Close</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_BASE = '/api';
-        
+        const API = '/api';
         let draggedTaskId = null;
+        let riskData = null;
 
-        // DOM Elements
-        const listTodo = document.getElementById('list-todo');
-        const listInProgress = document.getElementById('list-inprogress');
-        const listDone = document.getElementById('list-done');
-        const taskModal = document.getElementById('task-modal');
-        const taskForm = document.getElementById('task-form');
-        const summaryModal = document.getElementById('summary-modal');
-        const chatMessages = document.getElementById('chat-messages');
-
-        // Initialization
         document.addEventListener('DOMContentLoaded', () => {
             fetchTasks();
             fetchMessages();
-            setupEventListeners();
+            setupDragAndDrop();
+            
+            document.getElementById('task-form').addEventListener('submit', handleTaskSubmit);
+            setInterval(fetchMessages, 5000); // Polling chat
         });
 
-        function setupEventListeners() {
-            // Task Modal
-            document.getElementById('btn-new-task').addEventListener('click', () => openTaskModal());
-            document.getElementById('btn-cancel-task').addEventListener('click', closeTaskModal);
-            taskForm.addEventListener('submit', handleTaskSubmit);
-
-            // Summary Modal
-            document.getElementById('btn-summarize').addEventListener('click', handleSummarize);
-            document.getElementById('btn-close-summary').addEventListener('click', () => {
-                summaryModal.style.display = 'none';
-            });
-
-            // Chat
-            document.getElementById('btn-send-msg').addEventListener('click', handleSendMessage);
-
-            // Drag and Drop
-            const columns = document.querySelectorAll('.task-list');
-            columns.forEach(col => {
-                col.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    col.style.backgroundColor = 'rgba(255,255,255,0.05)';
-                });
-                col.addEventListener('dragleave', e => {
-                    col.style.backgroundColor = 'transparent';
-                });
-                col.addEventListener('drop', e => {
-                    e.preventDefault();
-                    col.style.backgroundColor = 'transparent';
-                    const newStatus = col.parentElement.dataset.status;
-                    if (draggedTaskId) {
-                        updateTaskStatus(draggedTaskId, newStatus);
-                    }
-                });
-            });
+        // --- Loader & Modals ---
+        function showLoader(text) {
+            document.getElementById('loader-text').textContent = text;
+            document.getElementById('global-loader').style.display = 'flex';
+        }
+        function hideLoader() { document.getElementById('global-loader').style.display = 'none'; }
+        
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function showTextModal(title, content) {
+            document.getElementById('text-modal-title').textContent = title;
+            document.getElementById('text-modal-content').textContent = content;
+            openModal('text-modal');
         }
 
-        // --- Tasks API & Logic ---
-
+        // --- Core Task Operations ---
         async function fetchTasks() {
             try {
-                const res = await fetch(`${API_BASE}/tasks`);
+                const res = await fetch(`${API}/tasks`);
                 const tasks = await res.json();
                 renderTasks(tasks);
-                updateDashboardStats(tasks);
-            } catch (err) {
-                console.error("Failed to fetch tasks", err);
-            }
+                checkSprintRisk(); // Check risk after loading tasks
+            } catch (err) { console.error(err); }
         }
 
         function renderTasks(tasks) {
-            listTodo.innerHTML = '';
-            listInProgress.innerHTML = '';
-            listDone.innerHTML = '';
-
+            const cols = { 'To Do': document.getElementById('list-todo'), 'In Progress': document.getElementById('list-inprogress'), 'Done': document.getElementById('list-done') };
+            Object.values(cols).forEach(c => c.innerHTML = '');
             let counts = { 'To Do': 0, 'In Progress': 0, 'Done': 0 };
 
+            if(tasks.length === 0) {
+                cols['To Do'].innerHTML = '<div class="empty-state">No tasks yet — use AI Sprint Planner to get started!</div>';
+            }
+
             tasks.forEach(task => {
-                const card = createTaskCard(task);
-                counts[task.status] = (counts[task.status] || 0) + 1;
-                
-                if (task.status === 'To Do') listTodo.appendChild(card);
-                else if (task.status === 'In Progress') listInProgress.appendChild(card);
-                else if (task.status === 'Done') listDone.appendChild(card);
+                counts[task.status]++;
+                cols[task.status].appendChild(createCard(task));
             });
 
             document.getElementById('count-todo').textContent = counts['To Do'];
@@ -554,213 +599,206 @@
             document.getElementById('count-done').textContent = counts['Done'];
         }
 
-        function updateDashboardStats(tasks) {
-            const total = tasks.length;
-            const inProgress = tasks.filter(t => t.status === 'In Progress').length;
-            const done = tasks.filter(t => t.status === 'Done').length;
-            
-            document.getElementById('stat-total').textContent = total;
-            document.getElementById('stat-inprogress').textContent = inProgress;
-            
-            const percent = total === 0 ? 0 : Math.round((done / total) * 100);
-            document.getElementById('stat-completed').textContent = `${percent}%`;
-        }
-
-        function createTaskCard(task) {
+        function createCard(task) {
             const div = document.createElement('div');
             div.className = 'task-card';
-            div.draggable = true;
             div.dataset.id = task.id;
+            div.dataset.priority = task.priority;
+            div.draggable = true;
 
-            div.addEventListener('dragstart', () => {
-                draggedTaskId = task.id;
-                setTimeout(() => div.classList.add('dragging'), 0);
-            });
+            // Check overdue
+            let isOverdue = false;
+            if (task.due_date && task.status !== 'Done') {
+                const due = new Date(task.due_date);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (due < today) { isOverdue = true; div.classList.add('overdue'); }
+            }
 
-            div.addEventListener('dragend', () => {
-                div.classList.remove('dragging');
-                draggedTaskId = null;
-            });
+            const initial = task.assignee ? task.assignee.charAt(0).toUpperCase() : '?';
+
+            div.addEventListener('dragstart', () => { draggedTaskId = task.id; setTimeout(()=>div.classList.add('dragging'),0); });
+            div.addEventListener('dragend', () => { div.classList.remove('dragging'); draggedTaskId = null; });
 
             div.innerHTML = `
-                <div class="task-header">
-                    <div class="task-title">${escapeHTML(task.title)}</div>
-                    <div class="task-actions">
-                        <button class="icon-btn" aria-label="Edit Task" onclick="editTask('${task.id}')">✎</button>
-                        <button class="icon-btn" aria-label="Delete Task" onclick="deleteTask('${task.id}')">🗑</button>
+                <div class="card-header">
+                    <div class="card-title">${escapeHTML(task.title)}</div>
+                    <div class="card-actions">
+                        <button class="icon-btn" onclick="editTask('${task.id}')" aria-label="Edit">✎</button>
+                        <button class="icon-btn" onclick="deleteTask('${task.id}')" aria-label="Delete">🗑</button>
                     </div>
                 </div>
-                <div class="task-desc">${escapeHTML(task.description || 'No description')}</div>
-                <div class="task-meta">
-                    <span class="badge priority-${task.priority}">${task.priority}</span>
-                    <span class="assignee">👤 ${escapeHTML(task.assignee || 'Unassigned')}</span>
+                <div class="card-badges">
+                    ${task.is_blocked ? '<span class="badge blocked">[BLOCKED]</span>' : ''}
+                    <span class="badge ${task.priority}">${task.priority}</span>
+                    ${isOverdue ? '<span class="badge blocked" style="border:none">Overdue</span>' : ''}
+                </div>
+                <div class="card-desc">${escapeHTML(task.description || '')}</div>
+                <div class="card-footer">
+                    <div class="due-date">📅 ${task.due_date || 'No date'}</div>
+                    <div class="avatar" title="${escapeHTML(task.assignee || 'Unassigned')}">${initial}</div>
                 </div>
             `;
             return div;
         }
 
-        async function handleTaskSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('task-id').value;
-            const title = document.getElementById('task-title').value;
-            const desc = document.getElementById('task-desc').value;
-            const priority = document.getElementById('task-priority').value;
-            const assignee = document.getElementById('task-assignee').value;
-            const status = document.getElementById('task-status').value || 'To Do';
-
-            const payload = { title, description: desc, priority, assignee, status };
-
-            try {
-                const method = id ? 'PUT' : 'POST';
-                const url = id ? `${API_BASE}/tasks/${id}` : `${API_BASE}/tasks`;
-                
-                await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+        function setupDragAndDrop() {
+            document.querySelectorAll('.task-list').forEach(col => {
+                col.addEventListener('dragover', e => { e.preventDefault(); col.style.background = 'rgba(255,255,255,0.05)'; });
+                col.addEventListener('dragleave', e => { col.style.background = 'transparent'; });
+                col.addEventListener('drop', async e => {
+                    e.preventDefault();
+                    col.style.background = 'transparent';
+                    if (draggedTaskId) {
+                        const newStatus = col.parentElement.dataset.status;
+                        await fetch(`${API}/tasks/${draggedTaskId}`, {
+                            method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status: newStatus})
+                        });
+                        fetchTasks();
+                    }
                 });
-                
-                closeTaskModal();
-                fetchTasks();
-            } catch (err) {
-                console.error("Error saving task", err);
-                alert("Failed to save task.");
-            }
+            });
         }
 
-        async function updateTaskStatus(taskId, newStatus) {
-            try {
-                await fetch(`${API_BASE}/tasks/${taskId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
-                });
-                fetchTasks();
-            } catch (err) {
-                console.error("Error updating status", err);
-            }
-        }
-
-        async function deleteTask(taskId) {
-            if (!confirm('Are you sure you want to delete this task?')) return;
-            try {
-                await fetch(`${API_BASE}/tasks/${taskId}`, { method: 'DELETE' });
-                fetchTasks();
-            } catch (err) {
-                console.error("Error deleting task", err);
-            }
-        }
-
-        // --- Task Modal Helpers ---
+        // Form handling
         function openTaskModal(task = null) {
             document.getElementById('task-id').value = task ? task.id : '';
             document.getElementById('task-title').value = task ? task.title : '';
             document.getElementById('task-desc').value = task ? task.description : '';
-            document.getElementById('task-priority').value = task ? task.priority : 'low';
+            document.getElementById('task-priority').value = task ? task.priority : 'medium';
+            document.getElementById('task-due').value = task ? task.due_date : '';
             document.getElementById('task-assignee').value = task ? task.assignee : '';
             document.getElementById('task-status').value = task ? task.status : 'To Do';
+            document.getElementById('task-blocked').checked = task ? task.is_blocked : false;
             
             document.getElementById('modal-title').textContent = task ? 'Edit Task' : 'Create Task';
             document.getElementById('status-group').style.display = task ? 'block' : 'none';
-            
-            taskModal.style.display = 'flex';
+            openModal('task-modal');
         }
 
-        function closeTaskModal() {
-            taskModal.style.display = 'none';
-            taskForm.reset();
+        async function editTask(id) {
+            const res = await fetch(`${API}/tasks`);
+            const tasks = await res.json();
+            const t = tasks.find(x => x.id === id);
+            if(t) openTaskModal(t);
         }
 
-        async function editTask(taskId) {
-            try {
-                const res = await fetch(`${API_BASE}/tasks`);
-                const tasks = await res.json();
-                const task = tasks.find(t => t.id === taskId);
-                if (task) {
-                    openTaskModal(task);
-                }
-            } catch (err) {
-                console.error("Failed to load task for editing", err);
-            }
+        async function deleteTask(id) {
+            if(!confirm('Delete task?')) return;
+            await fetch(`${API}/tasks/${id}`, { method: 'DELETE' });
+            fetchTasks();
         }
 
-        // --- Chat API & Logic ---
+        async function handleTaskSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('task-title').value,
+                description: document.getElementById('task-desc').value,
+                priority: document.getElementById('task-priority').value,
+                due_date: document.getElementById('task-due').value,
+                assignee: document.getElementById('task-assignee').value,
+                status: document.getElementById('task-status').value || 'To Do',
+                is_blocked: document.getElementById('task-blocked').checked
+            };
+            const id = document.getElementById('task-id').value;
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API}/tasks/${id}` : `${API}/tasks`;
 
+            await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+            closeModal('task-modal');
+            fetchTasks();
+        }
+
+        // --- Chat Operations ---
         async function fetchMessages() {
-            try {
-                const res = await fetch(`${API_BASE}/messages`);
-                const messages = await res.json();
-                renderMessages(messages);
-            } catch (err) {
-                console.error("Failed to fetch messages", err);
-            }
-        }
-
-        function renderMessages(messages) {
-            chatMessages.innerHTML = '';
-            messages.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = 'message';
-                div.innerHTML = `
-                    <div class="message-author">${escapeHTML(msg.author)}</div>
-                    <div class="message-text">${escapeHTML(msg.text)}</div>
-                `;
-                chatMessages.appendChild(div);
+            const res = await fetch(`${API}/messages`);
+            const msgs = await res.json();
+            const c = document.getElementById('chat-messages');
+            c.innerHTML = '';
+            msgs.forEach(m => {
+                const isAi = m.author.includes('🤖');
+                c.innerHTML += `<div class="message ${isAi?'ai-msg':''}">
+                    <div class="message-author">${escapeHTML(m.author)}</div>
+                    <div>${escapeHTML(m.text)}</div>
+                </div>`;
             });
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            c.scrollTop = c.scrollHeight;
         }
 
-        async function handleSendMessage() {
-            const author = document.getElementById('chat-author').value;
+        async function sendMessage() {
+            const author = document.getElementById('chat-author').value || 'User';
             const text = document.getElementById('chat-text').value;
+            if(!text) return;
+            await fetch(`${API}/messages`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({author,text})});
+            document.getElementById('chat-text').value = '';
+            fetchMessages();
+        }
 
-            if (!author || !text) return;
-
+        // --- AI Features ---
+        async function planSprint() {
+            const goal = document.getElementById('sprint-goal-input').value;
+            if(!goal) return alert('Enter a sprint goal');
+            showLoader('Generating Sprint Plan...');
             try {
-                await fetch(`${API_BASE}/messages`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ author, text })
-                });
-                document.getElementById('chat-text').value = '';
-                fetchMessages();
-            } catch (err) {
-                console.error("Failed to send message", err);
+                const res = await fetch(`${API}/ai/plan_sprint`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goal})});
+                if(res.ok) {
+                    document.getElementById('sprint-goal-input').value = '';
+                    await fetchTasks();
+                } else { alert('AI Error'); }
+            } catch(e) { alert(e); }
+            hideLoader();
+        }
+
+        async function submitStandup() {
+            const author = document.getElementById('standup-author').value || 'Team Member';
+            const text = document.getElementById('standup-input').value;
+            if(!text) return alert('Enter standup text');
+            showLoader('Analyzing Standup...');
+            try {
+                const res = await fetch(`${API}/ai/standup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({author,text})});
+                if(res.ok) {
+                    document.getElementById('standup-input').value = '';
+                    await fetchTasks();
+                    await fetchMessages();
+                } else { alert('AI Error'); }
+            } catch(e) { alert(e); }
+            hideLoader();
+        }
+
+        async function checkSprintRisk() {
+            const res = await fetch(`${API}/ai/risk`);
+            const data = await res.json();
+            const banner = document.getElementById('risk-banner');
+            if(data.at_risk) {
+                riskData = data.recommendation;
+                banner.textContent = data.banner_message;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+                riskData = null;
             }
         }
 
-        // --- AI Summarizer API ---
+        function showRiskDetails() {
+            if(riskData) showTextModal('⚠️ Sprint Risk Analysis', riskData);
+        }
 
-        async function handleSummarize() {
-            const summaryDiv = document.getElementById('summaryText');
-            summaryDiv.textContent = 'Generating summary and suggestions... Please wait.';
-            summaryModal.style.display = 'flex';
-
+        async function generateTeamSummary() {
+            showLoader('Generating Team Summary...');
             try {
-                const res = await fetch(`${API_BASE}/summarize`, { method: 'POST' });
+                const res = await fetch(`${API}/summarize`, { method:'POST' });
                 const data = await res.json();
-                
-                if (!res.ok) {
-                    summaryDiv.textContent = `Error: ${data.error}`;
-                } else {
-                    summaryDiv.textContent = data.summary;
-                }
-            } catch (err) {
-                console.error("Summarize failed", err);
-                summaryDiv.textContent = "Failed to connect to the summarizer service.";
-            }
+                if(res.ok) showTextModal('Team Summary', data.summary);
+                else alert(data.error);
+            } catch(e) { alert(e); }
+            hideLoader();
         }
 
-        // --- Utils ---
         function escapeHTML(str) {
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
         }
-
-        // Simple polling for chat messages (every 5 seconds)
-        setInterval(fetchMessages, 5000);
-        
     </script>
 </body>
 </html>
