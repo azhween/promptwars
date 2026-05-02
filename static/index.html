@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowMate - AI Collaboration</title>
+    <title>FlowMate — AI Team Collaboration</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -36,6 +36,25 @@
             overflow: hidden;
         }
 
+        /* Accessibility: Focus outlines & Skip Link */
+        *:focus-visible {
+            outline: 2px solid var(--warning) !important;
+            outline-offset: 2px;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--warning);
+            color: #000;
+            padding: 8px;
+            z-index: 100;
+            transition: top 0.2s;
+            font-weight: bold;
+        }
+        .skip-link:focus { top: 0; }
+
         h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
 
         /* Loading Spinner */
@@ -67,7 +86,7 @@
             color: var(--warning);
             text-align: center;
             padding: 0.8rem;
-            font-weight: 600;
+            font-weight: 700; /* Increased for contrast */
             cursor: pointer;
             border-bottom: 1px solid rgba(234, 179, 8, 0.4);
             animation: pulse-yellow 2s infinite;
@@ -128,7 +147,7 @@
 
         button {
             background-color: var(--accent-blue);
-            color: white;
+            color: #FFFFFF; /* High contrast */
             border: none;
             padding: 0.6rem 1.2rem;
             border-radius: var(--border-radius);
@@ -147,7 +166,8 @@
         }
         button.secondary {
             background-color: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4); /* High contrast */
+            color: #FFFFFF;
         }
         button.secondary:hover { background-color: rgba(255,255,255,0.1); box-shadow: none; }
 
@@ -211,10 +231,10 @@
         /* Empty State */
         .empty-state {
             text-align: center;
-            color: var(--text-muted);
+            color: #CBD5E1; /* High contrast muted text */
             padding: 2rem 1rem;
             font-size: 0.9rem;
-            border: 2px dashed rgba(255,255,255,0.1);
+            border: 2px dashed rgba(255,255,255,0.2);
             border-radius: var(--border-radius);
             margin-top: 1rem;
         }
@@ -228,10 +248,10 @@
             cursor: grab;
             transition: var(--transition);
             position: relative;
-            border-left: 4px solid var(--accent-blue); /* Default */
+            border-left: 4px solid var(--accent-blue);
         }
 
-        .task-card:hover {
+        .task-card:hover, .task-card:focus {
             transform: translateY(-4px);
             background: rgba(255,255,255,0.08);
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
@@ -273,20 +293,20 @@
         }
 
         .badge {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 700;
             padding: 0.2rem 0.5rem;
             border-radius: 4px;
             text-transform: uppercase;
         }
-        .badge.blocked { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
-        .badge.high { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
-        .badge.medium { background: rgba(234, 179, 8, 0.1); color: var(--warning); }
-        .badge.low { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .badge.blocked { background: var(--danger); color: #FFF; }
+        .badge.high { background: var(--danger); color: #FFF; }
+        .badge.medium { background: var(--warning); color: #000; }
+        .badge.low { background: var(--success); color: #FFF; }
 
         .card-desc {
             font-size: 0.85rem;
-            color: var(--text-muted);
+            color: #CBD5E1;
             margin-bottom: 1rem;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -298,8 +318,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.85rem;
+            color: #CBD5E1;
         }
 
         .avatar {
@@ -322,14 +342,15 @@
             display: none;
             gap: 0.5rem;
         }
-        .task-card:hover .card-actions { display: flex; }
+        .task-card:hover .card-actions, .task-card:focus-within .card-actions { display: flex; }
         .icon-btn {
-            background: rgba(0,0,0,0.5);
-            border: none; color: white;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
             border-radius: 4px; padding: 0.3rem;
             cursor: pointer;
         }
-        .icon-btn:hover { background: var(--accent-blue); }
+        .icon-btn:hover, .icon-btn:focus { background: var(--accent-blue); }
 
         /* Chat Panel */
         .chat-panel {
@@ -358,11 +379,11 @@
             background: rgba(255,255,255,0.05);
             padding: 0.8rem;
             border-radius: var(--border-radius);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             border-left: 2px solid var(--accent-blue);
         }
-        .message.ai-msg { border-left-color: #8B5CF6; background: rgba(139, 92, 246, 0.05); }
-        .message-author { font-weight: 700; margin-bottom: 0.3rem; font-size: 0.8rem; color: var(--text-muted); }
+        .message.ai-msg { border-left-color: #8B5CF6; background: rgba(139, 92, 246, 0.1); }
+        .message-author { font-weight: 700; margin-bottom: 0.3rem; font-size: 0.85rem; color: #CBD5E1; }
         .chat-input {
             padding: 1rem;
             border-top: var(--glass-border);
@@ -372,13 +393,13 @@
         /* Modals */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             backdrop-filter: blur(5px);
             display: none; justify-content: center; align-items: center;
             z-index: 100;
         }
         .modal {
-            background: #111827;
+            background: #0F172A;
             border: var(--glass-border);
             padding: 2rem;
             border-radius: 16px;
@@ -392,13 +413,23 @@
             to { transform: translateY(0); opacity: 1; }
         }
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; color: var(--text-muted); }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-size: 0.95rem; color: #E2E8F0; font-weight: 600;}
         .form-group input[type="checkbox"] { width: auto; margin-right: 0.5rem; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
 
         #summary-text, #risk-text {
             white-space: pre-wrap; line-height: 1.6; font-size: 0.95rem;
             max-height: 60vh; overflow-y: auto; padding-right: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(10, 15, 30, 0.9);
+            border-top: var(--glass-border);
         }
 
         /* Responsive */
@@ -412,66 +443,67 @@
     </style>
 </head>
 <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
 
     <!-- Loading Spinner -->
-    <div id="global-loader" aria-live="assertive">
+    <div id="global-loader" aria-live="assertive" role="alert">
         <div class="spinner"></div>
         <div id="loader-text" style="font-weight: 600;">Processing with AI...</div>
     </div>
 
     <!-- Risk Banner -->
-    <div id="risk-banner" role="alert" tabindex="0" aria-label="Sprint Risk Warning" onclick="showRiskDetails()">
+    <div id="risk-banner" role="alert" aria-live="assertive" tabindex="0" aria-label="Sprint Risk Warning: Click for details">
         <!-- Banner text injected here -->
     </div>
 
-    <header>
+    <header role="banner">
         <div class="logo">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" alt="">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
             FlowMate
         </div>
         
-        <div class="header-actions">
+        <nav role="navigation" class="header-actions" aria-label="Main Navigation">
             <div class="ai-input-group">
-                <input type="text" id="sprint-goal-input" placeholder="Enter sprint goal..." aria-label="Sprint Goal" style="width: 250px;">
-                <button onclick="planSprint()" aria-label="AI Sprint Planner">⚡ Plan Sprint</button>
+                <input type="text" id="sprint-goal-input" placeholder="Enter sprint goal..." aria-label="Sprint Goal Input" style="width: 250px;">
+                <button onclick="planSprint()" aria-label="Generate AI Sprint Plan">⚡ Plan Sprint</button>
             </div>
             <div class="ai-input-group">
-                <input type="text" id="standup-author" placeholder="Your Name" style="width: 120px;" aria-label="Standup Author" value="TeamMember">
-                <input type="text" id="standup-input" placeholder="Type natural language standup..." aria-label="Standup Update" style="width: 300px;">
-                <button onclick="submitStandup()" aria-label="Submit StandupAI">🎤 StandupAI</button>
+                <input type="text" id="standup-author" placeholder="Your Name" style="width: 120px;" aria-label="Standup Author Name" value="TeamMember">
+                <input type="text" id="standup-input" placeholder="Type natural language standup..." aria-label="Standup Update Input" style="width: 300px;">
+                <button onclick="submitStandup()" aria-label="Submit StandupAI Update">🎤 StandupAI</button>
             </div>
-            <button onclick="generateTeamSummary()" class="secondary" aria-label="Generate Team Summary">✨ Team Summary</button>
-            <button onclick="openTaskModal()" aria-label="New Task">+ Task</button>
-        </div>
+            <button onclick="generateTeamSummary()" class="secondary" aria-label="Generate AI Team Summary Modal">✨ Team Summary</button>
+            <button onclick="openTaskModal()" aria-label="Open New Task Modal" aria-expanded="false" aria-controls="task-modal">+ Task</button>
+        </nav>
     </header>
 
     <div class="app-container">
-        <main class="kanban-board">
-            <section class="kanban-column" data-status="To Do">
-                <h3>To Do <span class="col-count" id="count-todo">0</span></h3>
-                <div class="task-list" id="list-todo"></div>
+        <main id="main" role="main" class="kanban-board" aria-label="Kanban Board">
+            <section class="kanban-column" data-status="To Do" aria-label="To Do Column">
+                <h3>To Do <span class="col-count" id="count-todo" aria-label="To Do Count">0</span></h3>
+                <div class="task-list" id="list-todo" aria-label="To Do Task List"></div>
             </section>
             
-            <section class="kanban-column" data-status="In Progress">
-                <h3>In Progress <span class="col-count" id="count-inprogress">0</span></h3>
-                <div class="task-list" id="list-inprogress"></div>
+            <section class="kanban-column" data-status="In Progress" aria-label="In Progress Column">
+                <h3>In Progress <span class="col-count" id="count-inprogress" aria-label="In Progress Count">0</span></h3>
+                <div class="task-list" id="list-inprogress" aria-label="In Progress Task List"></div>
             </section>
             
-            <section class="kanban-column" data-status="Done">
-                <h3>Done <span class="col-count" id="count-done">0</span></h3>
-                <div class="task-list" id="list-done"></div>
+            <section class="kanban-column" data-status="Done" aria-label="Done Column">
+                <h3>Done <span class="col-count" id="count-done" aria-label="Done Count">0</span></h3>
+                <div class="task-list" id="list-done" aria-label="Done Task List"></div>
             </section>
         </main>
 
         <aside class="chat-panel" aria-label="Team Chat">
             <div class="chat-header">Team Chat</div>
-            <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
+            <div class="chat-messages" id="chat-messages" aria-live="polite" role="log"></div>
             <div class="chat-input">
-                <input type="text" id="chat-author" placeholder="Your Name" aria-label="Chat Name">
-                <textarea id="chat-text" placeholder="Type a message..." rows="2" aria-label="Message Text"></textarea>
-                <button onclick="sendMessage()" aria-label="Send Message">Send</button>
+                <input type="text" id="chat-author" placeholder="Your Name" aria-label="Chat Author Name">
+                <textarea id="chat-text" placeholder="Type a message..." rows="2" aria-label="Chat Message Text"></textarea>
+                <button onclick="sendMessage()" aria-label="Send Chat Message">Send</button>
             </div>
         </aside>
     </div>
@@ -482,48 +514,48 @@
         <div class="modal">
             <h3 id="modal-title" style="margin-bottom: 1.5rem;">Create Task</h3>
             <form id="task-form">
-                <input type="hidden" id="task-id">
+                <input type="hidden" id="task-id" aria-label="Task ID">
                 <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" id="task-title" required style="width:100%;">
+                    <label for="task-title">Title</label>
+                    <input type="text" id="task-title" required style="width:100%;" aria-label="Task Title Input">
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="task-desc" rows="3" style="width:100%;"></textarea>
+                    <label for="task-desc">Description</label>
+                    <textarea id="task-desc" rows="3" style="width:100%;" aria-label="Task Description Input"></textarea>
                 </div>
                 <div style="display:flex; gap:1rem;">
                     <div class="form-group" style="flex:1;">
-                        <label>Priority</label>
-                        <select id="task-priority" required style="width:100%;">
+                        <label for="task-priority">Priority</label>
+                        <select id="task-priority" required style="width:100%;" aria-label="Task Priority Select" aria-expanded="false">
                             <option value="low">Low</option>
                             <option value="medium">Medium</option>
                             <option value="high">High</option>
                         </select>
                     </div>
                     <div class="form-group" style="flex:1;">
-                        <label>Due Date</label>
-                        <input type="date" id="task-due" style="width:100%;">
+                        <label for="task-due">Due Date</label>
+                        <input type="date" id="task-due" style="width:100%;" aria-label="Task Due Date Input">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Assignee</label>
-                    <input type="text" id="task-assignee" style="width:100%;">
+                    <label for="task-assignee">Assignee</label>
+                    <input type="text" id="task-assignee" style="width:100%;" aria-label="Task Assignee Input">
                 </div>
                 <div class="form-group" id="status-group" style="display:none;">
-                    <label>Status</label>
-                    <select id="task-status" style="width:100%;">
+                    <label for="task-status">Status</label>
+                    <select id="task-status" style="width:100%;" aria-label="Task Status Select" aria-expanded="false">
                         <option value="To Do">To Do</option>
                         <option value="In Progress">In Progress</option>
                         <option value="Done">Done</option>
                     </select>
                 </div>
                 <div class="form-group" style="display:flex; align-items:center;">
-                    <input type="checkbox" id="task-blocked">
+                    <input type="checkbox" id="task-blocked" aria-label="Mark Task as Blocked Checkbox">
                     <label for="task-blocked" style="margin:0; color:var(--danger); font-weight:600;">Mark as Blocked</label>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="secondary" onclick="closeModal('task-modal')">Cancel</button>
-                    <button type="submit">Save</button>
+                    <button type="button" class="secondary" onclick="closeModal('task-modal')" aria-label="Cancel Task Edit">Cancel</button>
+                    <button type="submit" aria-label="Save Task Details">Save</button>
                 </div>
             </form>
         </div>
@@ -533,12 +565,16 @@
     <div class="modal-overlay" id="text-modal" role="dialog" aria-modal="true" aria-labelledby="text-modal-title">
         <div class="modal" style="width: 600px;">
             <h3 id="text-modal-title" style="margin-bottom: 1.5rem; color:var(--accent-blue);">Modal Title</h3>
-            <div id="text-modal-content" style="white-space:pre-wrap; line-height:1.6; max-height:60vh; overflow-y:auto;"></div>
+            <div id="text-modal-content" style="white-space:pre-wrap; line-height:1.6; max-height:60vh; overflow-y:auto;" aria-label="Modal Content"></div>
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick="closeModal('text-modal')">Close</button>
+                <button type="button" class="secondary" onclick="closeModal('text-modal')" aria-label="Close Text Modal">Close</button>
             </div>
         </div>
     </div>
+
+    <footer role="contentinfo">
+        <p>⚡ Powered by Google Gemini 1.5 Flash</p>
+    </footer>
 
     <script>
         const API = '/api';
@@ -552,6 +588,14 @@
             
             document.getElementById('task-form').addEventListener('submit', handleTaskSubmit);
             setInterval(fetchMessages, 5000); // Polling chat
+
+            // Keyboard accessibility for risk banner
+            document.getElementById('risk-banner').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    showRiskDetails();
+                }
+            });
         });
 
         // --- Loader & Modals ---
@@ -561,8 +605,18 @@
         }
         function hideLoader() { document.getElementById('global-loader').style.display = 'none'; }
         
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+            if(id === 'task-modal') {
+                document.querySelector('button[onclick="openTaskModal()"]').setAttribute('aria-expanded', 'true');
+            }
+        }
+        function closeModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            if(id === 'task-modal') {
+                document.querySelector('button[onclick="openTaskModal()"]').setAttribute('aria-expanded', 'false');
+            }
+        }
         
         function showTextModal(title, content) {
             document.getElementById('text-modal-title').textContent = title;
@@ -586,7 +640,7 @@
             let counts = { 'To Do': 0, 'In Progress': 0, 'Done': 0 };
 
             if(tasks.length === 0) {
-                cols['To Do'].innerHTML = '<div class="empty-state">No tasks yet — use AI Sprint Planner to get started!</div>';
+                cols['To Do'].innerHTML = '<div class="empty-state" aria-label="Empty State">No tasks yet — use AI Sprint Planner to get started!</div>';
             }
 
             tasks.forEach(task => {
@@ -605,6 +659,9 @@
             div.dataset.id = task.id;
             div.dataset.priority = task.priority;
             div.draggable = true;
+            div.tabIndex = 0; // Keyboard accessible
+            div.setAttribute('aria-grabbed', 'false');
+            div.setAttribute('aria-label', `Task: ${escapeHTML(task.title)}`);
 
             // Check overdue
             let isOverdue = false;
@@ -617,15 +674,23 @@
 
             const initial = task.assignee ? task.assignee.charAt(0).toUpperCase() : '?';
 
-            div.addEventListener('dragstart', () => { draggedTaskId = task.id; setTimeout(()=>div.classList.add('dragging'),0); });
-            div.addEventListener('dragend', () => { div.classList.remove('dragging'); draggedTaskId = null; });
+            div.addEventListener('dragstart', () => { 
+                draggedTaskId = task.id; 
+                div.setAttribute('aria-grabbed', 'true');
+                setTimeout(()=>div.classList.add('dragging'),0); 
+            });
+            div.addEventListener('dragend', () => { 
+                div.classList.remove('dragging'); 
+                div.setAttribute('aria-grabbed', 'false');
+                draggedTaskId = null; 
+            });
 
             div.innerHTML = `
                 <div class="card-header">
                     <div class="card-title">${escapeHTML(task.title)}</div>
                     <div class="card-actions">
-                        <button class="icon-btn" onclick="editTask('${task.id}')" aria-label="Edit">✎</button>
-                        <button class="icon-btn" onclick="deleteTask('${task.id}')" aria-label="Delete">🗑</button>
+                        <button class="icon-btn" onclick="editTask('${task.id}')" aria-label="Edit Task ${escapeHTML(task.title)}">✎</button>
+                        <button class="icon-btn" onclick="deleteTask('${task.id}')" aria-label="Delete Task ${escapeHTML(task.title)}">🗑</button>
                     </div>
                 </div>
                 <div class="card-badges">
@@ -636,7 +701,7 @@
                 <div class="card-desc">${escapeHTML(task.description || '')}</div>
                 <div class="card-footer">
                     <div class="due-date">📅 ${task.due_date || 'No date'}</div>
-                    <div class="avatar" title="${escapeHTML(task.assignee || 'Unassigned')}">${initial}</div>
+                    <div class="avatar" title="${escapeHTML(task.assignee || 'Unassigned')}" aria-label="Assignee ${escapeHTML(task.assignee || 'Unassigned')}">${initial}</div>
                 </div>
             `;
             return div;
@@ -741,13 +806,11 @@
             showLoader('Generating Sprint Plan...');
             try {
                 const res = await fetch(`${API}/ai/plan_sprint`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goal})});
+                const data = await res.json();
                 if(res.ok) {
                     document.getElementById('sprint-goal-input').value = '';
                     await fetchTasks();
-                } else {
-                    const data = await res.json();
-                    alert(data.error || 'AI Error');
-                }
+                } else { alert(data.error || 'AI Error'); }
             } catch(e) { alert(e); }
             hideLoader();
         }
@@ -759,14 +822,12 @@
             showLoader('Analyzing Standup...');
             try {
                 const res = await fetch(`${API}/ai/standup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({author,text})});
+                const data = await res.json();
                 if(res.ok) {
                     document.getElementById('standup-input').value = '';
                     await fetchTasks();
                     await fetchMessages();
-                } else {
-                    const data = await res.json();
-                    alert(data.error || 'AI Error');
-                }
+                } else { alert(data.error || 'AI Error'); }
             } catch(e) { alert(e); }
             hideLoader();
         }
