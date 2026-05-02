@@ -176,7 +176,7 @@ def summarize_tasks():
 
     try:
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         return jsonify({'summary': response.text}), 200
@@ -218,7 +218,7 @@ Return ONLY valid JSON.
     try:
         config = types.GenerateContentConfig(response_mime_type="application/json")
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=config
         )
@@ -285,7 +285,7 @@ Return ONLY a JSON object with this structure:
     try:
         config = types.GenerateContentConfig(response_mime_type="application/json")
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=config
         )
@@ -340,7 +340,7 @@ Return ONLY a JSON object with this structure:
     try:
         config = types.GenerateContentConfig(response_mime_type="application/json")
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=config
         )
